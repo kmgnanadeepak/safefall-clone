@@ -84,28 +84,25 @@ Vercel
 Netlify
 Cloudflare Pages
 
-##🔒 Security Focus
+🔒 Security Focus
 Role-based dashboards
-
 Secure authentication
-
 Emergency-first UI clarity
-
 Healthcare-grade UX principles
+
 
 🎯 Use Cases
 Elderly fall detection
-
 Hospital emergency systems
-
 Medical IoT dashboards
-
 Personal safety platforms
+
 
 👨‍💻 Author
 KM Gnana Deepak
 B.Tech CSE (2027)
 Focused on building real-world, production-grade systems
+
 
 📄 License
 Private / Proprietary
