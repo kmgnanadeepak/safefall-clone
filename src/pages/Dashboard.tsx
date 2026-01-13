@@ -22,9 +22,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-const FALL_ACCEL_THRESHOLD = 25;     // m/s²
-const FALL_ROTATION_THRESHOLD = 300; // deg/sec
-const FALL_COOLDOWN_MS = 10000;      // 10 seconds
+const FALL_ACCEL_THRESHOLD = 50;     // m/s²
+const FALL_ROTATION_THRESHOLD = 500; // deg/sec
+const FALL_COOLDOWN_MS = 15000;      // 10 seconds
 
 export default function Dashboard() {
   const { user } = useAuth();

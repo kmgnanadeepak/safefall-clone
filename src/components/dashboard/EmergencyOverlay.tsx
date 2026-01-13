@@ -1,181 +1,166 @@
-import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, CheckCircle, Phone } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { useState, useEffect, useCallback } from 'react'
+import { motion } from 'framer-motion'
+import { AlertTriangle, CheckCircle, Phone } from 'lucide-react'
+import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/contexts/AuthContext'
+import { toast } from 'sonner'
 
-interface EmergencyOverlayProps {
-  isOpen: boolean;
-  onClose: () => void;
-  eventId?: string;
+interface EmergencyOverlayProps{
+  isOpen:boolean
+  onClose:()=>void
+  eventId?:string
 }
 
-export function EmergencyOverlay({ isOpen, onClose, eventId }: EmergencyOverlayProps) {
-  const [countdown, setCountdown] = useState(30);
-  const [status, setStatus] = useState<'countdown' | 'resolved' | 'emergency'>('countdown');
-  const { user } = useAuth();
+export function EmergencyOverlay({isOpen,onClose,eventId}:EmergencyOverlayProps){
+  const {user}=useAuth()
 
-  const handleEmergency = useCallback(async () => {
-    if (!user || !eventId) return;
+  const [countdown,setCountdown]=useState(30)
+  const [status,setStatus]=useState<'countdown'|'resolved'|'emergency'>('countdown')
 
-    setStatus('emergency');
-
-    // Update fall event to emergency
-    await supabase
-      .from('fall_events')
-      .update({ is_emergency: true })
-      .eq('id', eventId);
-
-    // Create notification
-    await supabase.from('notifications').insert({
-      user_id: user.id,
-      type: 'emergency',
-      title: 'Emergency Alert Triggered',
-      message: 'Emergency services and contacts have been notified.',
-      related_event_id: eventId,
-    });
-
-    toast.error('Emergency alert sent!', {
-      description: 'Emergency contacts and services have been notified.',
-    });
-
-    setTimeout(() => {
-      onClose();
-      setStatus('countdown');
-      setCountdown(30);
-    }, 3000);
-  }, [user, eventId, onClose]);
-
-  const handleOk = async () => {
-    if (!user || !eventId) return;
-
-    setStatus('resolved');
-
-    // Update fall event as false alarm
-    await supabase
-      .from('fall_events')
-      .update({ is_emergency: false, resolved: true, resolved_at: new Date().toISOString() })
-      .eq('id', eventId);
-
-    // Create notification
-    await supabase.from('notifications').insert({
-      user_id: user.id,
-      type: 'resolved',
-      title: 'Fall Marked as False Alarm',
-      message: 'You marked the detected fall as a false alarm.',
-      related_event_id: eventId,
-    });
-
-    toast.success('Marked as false alarm');
-
-    setTimeout(() => {
-      onClose();
-      setStatus('countdown');
-      setCountdown(30);
-    }, 2000);
-  };
-
-  useEffect(() => {
-    if (!isOpen || status !== 'countdown') return;
-
-    const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          handleEmergency();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isOpen, status, handleEmergency]);
-
-  useEffect(() => {
-    if (isOpen) {
-      setCountdown(30);
-      setStatus('countdown');
+  /* ---------------- RESET ONLY WHEN OPENED ---------------- */
+  useEffect(()=>{
+    if(isOpen){
+      setCountdown(30)
+      setStatus('countdown')
     }
-  }, [isOpen]);
+  },[isOpen])
 
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="emergency-overlay"
-        >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            className="text-center"
-          >
-            {status === 'countdown' && (
-              <>
-                <AlertTriangle className="mx-auto mb-6 h-24 w-24 text-danger animate-pulse" />
-                <h2 className="mb-4 text-3xl font-bold text-foreground">Fall Detected!</h2>
-                <p className="mb-8 text-lg text-muted-foreground">
-                  Emergency services will be contacted in:
-                </p>
-                <div className="emergency-countdown mb-10">{countdown}</div>
-                <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-                  <button
-                    onClick={handleOk}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-success px-8 py-4 text-lg font-semibold text-success-foreground transition-all hover:bg-success/90"
-                  >
-                    <CheckCircle className="h-6 w-6" />
-                    I'm OK
-                  </button>
-                  <button
-                    onClick={handleEmergency}
-                    className="btn-danger flex items-center justify-center gap-2 px-8 py-4 text-lg"
-                  >
-                    <Phone className="h-6 w-6" />
-                    Emergency - Need Help!
-                  </button>
-                </div>
-              </>
-            )}
+  /* ---------------- COUNTDOWN ---------------- */
+  useEffect(()=>{
+    if(!isOpen||status!=='countdown') return
 
-            {status === 'resolved' && (
-              <>
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', duration: 0.5 }}
-                >
-                  <CheckCircle className="mx-auto mb-6 h-24 w-24 text-success" />
-                </motion.div>
-                <h2 className="mb-4 text-3xl font-bold text-success">All Clear!</h2>
-                <p className="text-lg text-muted-foreground">
-                  Glad you're okay. Stay safe!
-                </p>
-              </>
-            )}
+    const timer=setInterval(()=>{
+      setCountdown(prev=>{
+        if(prev<=1){
+          clearInterval(timer)
+          handleEmergency()
+          return 0
+        }
+        return prev-1
+      })
+    },1000)
 
-            {status === 'emergency' && (
-              <>
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', duration: 0.5 }}
-                >
-                  <Phone className="mx-auto mb-6 h-24 w-24 text-danger animate-pulse" />
-                </motion.div>
-                <h2 className="mb-4 text-3xl font-bold text-danger">Help is on the way!</h2>
-                <p className="text-lg text-muted-foreground">
-                  Emergency contacts and services have been notified.
-                </p>
-              </>
-            )}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
+    return()=>clearInterval(timer)
+  },[isOpen,status])
+
+  /* ---------------- EMERGENCY ---------------- */
+  const handleEmergency=useCallback(async()=>{
+    if(!user||!eventId) return
+
+    setStatus('emergency')
+
+    await supabase
+      .from('fall_events')
+      .update({is_emergency:true})
+      .eq('id',eventId)
+
+    await supabase.from('notifications').insert({
+      user_id:user.id,
+      type:'emergency',
+      title:'Emergency Alert Triggered',
+      message:'Emergency services and contacts have been notified.',
+      related_event_id:eventId,
+    })
+
+    toast.error('Emergency alert sent!')
+
+    setTimeout(onClose,3000)
+  },[user,eventId,onClose])
+
+  /* ---------------- I'M OK ---------------- */
+  const handleOk=async()=>{
+    if(!user||!eventId) return
+
+    setStatus('resolved')
+
+    await supabase
+      .from('fall_events')
+      .update({
+        is_emergency:false,
+        resolved:true,
+        resolved_at:new Date().toISOString(),
+      })
+      .eq('id',eventId)
+
+    toast.success('Marked as false alarm')
+
+    setTimeout(onClose,2000)
+  }
+
+  /* ---------------- UI (UNCHANGED) ---------------- */
+  return(
+    <motion.div
+      initial={false}
+      animate={{
+        opacity:isOpen?1:0,
+        pointerEvents:isOpen?'auto':'none',
+      }}
+      className="emergency-overlay"
+    >
+      <motion.div
+        animate={{
+          scale:isOpen?1:0.95,
+          opacity:isOpen?1:0,
+        }}
+        className="text-center"
+      >
+        {status==='countdown'&&(
+          <>
+            <AlertTriangle className="mx-auto mb-6 h-24 w-24 text-danger animate-pulse"/>
+            <h2 className="mb-4 text-3xl font-bold text-foreground">
+              Fall Detected!
+            </h2>
+            <p className="mb-8 text-lg text-muted-foreground">
+              Emergency services will be contacted in:
+            </p>
+            <div className="emergency-countdown mb-10">
+              {countdown}
+            </div>
+
+            <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
+              <button
+                onClick={handleOk}
+                className="flex items-center justify-center gap-2 rounded-xl bg-success px-8 py-4 text-lg font-semibold text-success-foreground hover:bg-success/90"
+              >
+                <CheckCircle className="h-6 w-6"/>
+                I'm OK
+              </button>
+
+              <button
+                onClick={handleEmergency}
+                className="btn-danger flex items-center justify-center gap-2 px-8 py-4 text-lg"
+              >
+                <Phone className="h-6 w-6"/>
+                Emergency - Need Help!
+              </button>
+            </div>
+          </>
+        )}
+
+        {status==='resolved'&&(
+          <>
+            <CheckCircle className="mx-auto mb-6 h-24 w-24 text-success"/>
+            <h2 className="mb-4 text-3xl font-bold text-success">
+              All Clear!
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Glad you're okay. Stay safe!
+            </p>
+          </>
+        )}
+
+        {status==='emergency'&&(
+          <>
+            <Phone className="mx-auto mb-6 h-24 w-24 text-danger animate-pulse"/>
+            <h2 className="mb-4 text-3xl font-bold text-danger">
+              Help is on the way!
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Emergency contacts and services have been notified.
+            </p>
+          </>
+        )}
+      </motion.div>
+    </motion.div>
+  )
 }
