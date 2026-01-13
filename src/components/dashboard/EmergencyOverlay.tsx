@@ -155,7 +155,7 @@ export function EmergencyOverlay({isOpen,onClose,eventId}:EmergencyOverlayProps)
           <>
             <Phone className="mx-auto mb-6 h-24 w-24 text-danger animate-pulse"/>
             <h2 className="mb-4 text-3xl font-bold text-danger">
-              Help is on the way!
+              SMS alerts are simulated in demo mode and can be enabled in production with a paid SMS provider.
             </h2>
             <p className="text-lg text-muted-foreground">
               SMS alerts are simulated in demo mode and can be enabled in production with a paid SMS provider.
