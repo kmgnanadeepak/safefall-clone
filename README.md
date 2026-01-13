@@ -62,37 +62,29 @@ safe-fall/
 ├── public/
 ├── package.json
 └── README.md
+
+
+
 ⚙️ Getting Started
 1️⃣ Clone the Repository
-sh
-Copy code
 git clone <YOUR_GIT_URL>
+
 2️⃣ Navigate to the Project
-sh
-Copy code
 cd safe-fall
+
 3️⃣ Install Dependencies
-sh
-Copy code
 npm install
+
 4️⃣ Start Development Server
-sh
-Copy code
 npm run dev
+
 🌐 Deployment
 Supported platforms:
-
 Vercel
-
 Netlify
-
 Cloudflare Pages
 
-sh
-Copy code
-npm run build
-npm run preview
-🔒 Security Focus
+##🔒 Security Focus
 Role-based dashboards
 
 Secure authentication
