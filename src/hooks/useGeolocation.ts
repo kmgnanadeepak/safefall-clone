@@ -1,90 +1,116 @@
-import {useState,useEffect,useCallback} from "react"
+import { useState, useEffect, useCallback } from "react";
 
-interface GeolocationState{
-  latitude:number|null
-  longitude:number|null
-  accuracy:number|null
-  error:string|null
-  loading:boolean
-  permissionDenied:boolean
+interface GeolocationState {
+  latitude: number | null;
+  longitude: number | null;
+  accuracy: number | null;
+  error: string | null;
+  loading: boolean;
+  permissionDenied: boolean;
 }
 
-export function useGeolocation(options?:PositionOptions){
-  const [state,setState]=useState<GeolocationState>({
-    latitude:null,
-    longitude:null,
-    accuracy:null,
-    error:null,
-    loading:true,
-    permissionDenied:false
-  })
+export function useGeolocation(options?: PositionOptions) {
+  const [state, setState] = useState<GeolocationState>({
+    latitude: null,
+    longitude: null,
+    accuracy: null,
+    error: null,
+    loading: true,
+    permissionDenied: false,
+  });
 
-  const [watchId,setWatchId]=useState<number|null>(null)
+  const [watchId, setWatchId] = useState<number | null>(null);
 
-  const startWatching=useCallback(()=>{
-    if(!("geolocation" in navigator)){
-      setState(s=>({
-        ...s,
-        error:"Geolocation not supported",
-        loading:false
-      }))
-      return
+  const requestPermission = useCallback(() => {
+    if (!navigator.geolocation) {
+      setState((prev) => ({
+        ...prev,
+        error: "Geolocation is not supported by your browser",
+        loading: false,
+      }));
+      return;
     }
 
-    const id=navigator.geolocation.watchPosition(
-      pos=>{
+    setState((prev) => ({
+      ...prev,
+      loading: true,
+      error: null,
+      permissionDenied: false,
+    }));
+
+    const id = navigator.geolocation.watchPosition(
+      (position) => {
         setState({
-          latitude:pos.coords.latitude,
-          longitude:pos.coords.longitude,
-          accuracy:pos.coords.accuracy,
-          error:null,
-          loading:false,
-          permissionDenied:false
-        })
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+          error: null,
+          loading: false,
+          permissionDenied: false,
+        });
       },
-      err=>{
+      (error) => {
+        let errorMessage = "Unable to retrieve location";
+        let denied = false;
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage =
+              "Location permission denied. Please enable location access in your browser settings.";
+            denied = true;
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information is unavailable.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "The request to get your location timed out.";
+            break;
+        }
+
         setState({
-          latitude:null,
-          longitude:null,
-          accuracy:null,
-          error:
-            err.code===err.PERMISSION_DENIED
-              ?"Location permission denied"
-              :err.code===err.POSITION_UNAVAILABLE
-              ?"Location unavailable"
-              :"Location request timed out",
-          loading:false,
-          permissionDenied:err.code===err.PERMISSION_DENIED
-        })
+          latitude: null,
+          longitude: null,
+          accuracy: null,
+          error: errorMessage,
+          loading: false,
+          permissionDenied: denied,
+        });
       },
       {
-        enableHighAccuracy:true,
-        maximumAge:0,
-        timeout:15000,
-        ...options
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+        ...options,
       }
-    )
+    );
 
-    setWatchId(id)
-  },[options])
+    setWatchId(id);
+  }, [options]);
 
-  const stopWatching=useCallback(()=>{
-    if(watchId!==null){
-      navigator.geolocation.clearWatch(watchId)
-      setWatchId(null)
+  const stopWatching = useCallback(() => {
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      setWatchId(null);
     }
-  },[watchId])
+  }, [watchId]);
 
-  // 🔥 AUTO-START GPS ON MOUNT (CRITICAL FIX)
-  useEffect(()=>{
-    startWatching()
-    return()=>stopWatching()
-  },[startWatching,stopWatching])
+  useEffect(() => {
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+  }, [watchId]);
 
-  return{
+  // ✅ REQUIRED ADDITION (AUTO-START GPS)
+  useEffect(() => {
+    requestPermission();
+  }, [requestPermission]);
+
+  return {
     ...state,
-    requestPermission:startWatching,
+    requestPermission,
     stopWatching,
-    isWatching:watchId!==null
-  }
+    isWatching: watchId !== null,
+  };
 }
