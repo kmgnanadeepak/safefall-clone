@@ -58,11 +58,13 @@ export function EmergencyOverlay({isOpen,onClose,eventId}:EmergencyOverlayProps)
       user_id:user.id,
       type:'emergency',
       title:'Emergency Alert Triggered',
-      message:'Emergency services and contacts have been notified.',
+      message:'SMS alerts are simulated in demo mode and can be enabled in production with a paid SMS provider.',
       related_event_id:eventId,
     })
 
-    toast.error('Emergency alert sent!')
+    toast.warning(
+      'SMS alerts are simulated in demo mode and can be enabled in production with a paid SMS provider.'
+    )
 
     setTimeout(onClose,3000)
   },[user,eventId,onClose])
@@ -156,7 +158,7 @@ export function EmergencyOverlay({isOpen,onClose,eventId}:EmergencyOverlayProps)
               Help is on the way!
             </h2>
             <p className="text-lg text-muted-foreground">
-              Emergency contacts and services have been notified.
+              SMS alerts are simulated in demo mode and can be enabled in production with a paid SMS provider.
             </p>
           </>
         )}
